@@ -1,0 +1,61 @@
+# Secrets / credentials
+.env
+service_account*.json
+credentials*.json
+client_secret*.json
+token.json
+
+# Office temp lock files (created while a .pptx/.docx/.xlsx is open)
+~$*
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Generated databases, checkpoints, and vector stores
+# (recreated by the scripts themselves on first run)
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+**/*chroma*/
+# Exception: this is source code (a Dockerized example), not a recreated
+# vector-store data directory - its name just happens to contain "chroma".
+!14_advanced/18_Dockerizing/3_fastapi_chromadb_redis_worker/
+**/*faiss*/
+**/llamaindex_storage/
+**/.langgraph_api/
+**/.playwright-mcp/
+2_openai_agents/data/
+
+# 15_real demo run output (recreated by the scripts themselves on first run)
+15_real/agent_memory/
+15_real/langchain_memory_db/
+15_real/logs/
+15_real/research_reports/
+15_real/voice_assistant_audio/
+15_real/personal_memory_assistant_audio/
+15_real/language_tutor_audio/
+15_real/voice_stock_price_audio/
+15_real/customer_support_voice_audio/
+
+# Large data files exceeding GitHub's size limit
+3_langgraph/amazon_products.csv
+
+# Logs
+*.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Office lock files
+~$*

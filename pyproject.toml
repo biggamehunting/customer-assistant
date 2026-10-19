@@ -1,0 +1,113 @@
+[build-system]
+requires = ["setuptools>=70.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "customer-assistant"
+version = "0.1.0"
+description = "Production-grade agentic RAG customer assistant"
+requires-python = ">=3.12"
+dependencies = [
+    # API
+    "fastapi==0.115.5",
+    "uvicorn[standard]==0.32.1",
+    "pydantic==2.10.3",
+    "pydantic-settings==2.6.1",
+    "python-multipart==0.0.19",
+    "httpx==0.28.1",
+
+    # Database
+    "sqlalchemy[asyncio]==2.0.36",
+    "asyncpg==0.30.0",
+    "alembic==1.14.0",
+    "pgvector==0.3.6",
+    "psycopg2-binary==2.9.10",
+
+    # LangChain / LangGraph / OpenAI
+    "langchain==0.3.12",
+    "langchain-openai==0.2.12",
+    "langchain-community==0.3.12",
+    "langgraph==0.2.56",
+    "langgraph-checkpoint-postgres==2.0.8",
+    "openai==1.57.4",
+    "tiktoken==0.8.0",
+
+    # Document processing
+    "pymupdf==1.25.0",
+    "pytesseract==0.3.13",
+    "Pillow==11.0.0",
+    "boto3==1.35.86",
+
+    # Background tasks
+    "celery[redis]==5.4.0",
+    "redis==5.2.1",
+    "kombu==5.4.2",
+
+    # Charts
+    "plotly==5.24.1",
+    "kaleido==0.2.1",
+    "pandas==2.2.3",
+
+    # Observability
+    "opentelemetry-api==1.29.0",
+    "opentelemetry-sdk==1.29.0",
+    "opentelemetry-instrumentation-fastapi==0.50b0",
+    "opentelemetry-instrumentation-sqlalchemy==0.50b0",
+    "opentelemetry-exporter-otlp==1.29.0",
+    "prometheus-client==0.21.1",
+    "structlog==24.4.0",
+
+    # Auth / Security
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "bcrypt==4.0.1",
+    "slowapi==0.1.9",
+
+    # Utilities
+    "tenacity==9.0.0",
+    "python-dotenv==1.0.1",
+    "anyio==4.7.0",
+    "aiofiles==24.1.0",
+    "xxhash==3.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "pytest-cov==6.0.0",
+    "pytest-mock==3.14.0",
+    "httpx==0.28.1",
+    "factory-boy==3.3.1",
+    "Faker==33.1.0",
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+    "pre-commit==4.0.1",
+    "types-redis==4.6.0.20241004",
+    "types-Pillow==10.2.0.20240822",
+    "types-python-jose==3.3.4.20240106",
+    "types-passlib==1.7.7.20240819",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-report=html"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "S", "ANN"]
+ignore = ["ANN101", "ANN102", "S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]

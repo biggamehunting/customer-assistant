@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+  ENVIRONMENT: test
+  OPENAI_API_KEY: sk-test-dummy-key
+  DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/customer_assistant_test
+  REDIS_URL: redis://localhost:6379/1
+  STORAGE_BACKEND: local
+  LOCAL_STORAGE_PATH: /tmp/test_storage
+  SECRET_KEY: test-secret-key-not-for-production-32chars!!
+
+jobs:
+  # ── Lint and type-check ────────────────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install ".[dev]"
+      - run: ruff check app tests
+      - run: ruff format --check app tests
+      - run: mypy app
+
+  # ── Unit tests ────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install ".[dev]"
+      - run: pytest tests/unit tests/security -v --tb=short --no-header
+        env:
+          ENVIRONMENT: test
+
+  # ── API tests (with PostgreSQL) ────────────────────────────────────────────
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: customer_assistant_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install ".[dev]"
+      - name: Run migrations
+        run: alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/customer_assistant_test
+      - run: pytest tests/api -v --tb=short --no-header
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/customer_assistant_test
+
+  # ── Docker build ──────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t customer-assistant-api:${{ github.sha }} .
+      - name: Build worker image
+        run: docker build -f Dockerfile.worker -t customer-assistant-worker:${{ github.sha }} .
+
+  # ── Security scan ─────────────────────────────────────────────────────────
+  security-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install pip-audit
+      - run: pip-audit --requirement <(pip install ".[dev]" --dry-run 2>/dev/null | grep "Would install" | sed 's/.*Would install //' | tr ' ' '\n' | sed 's/==/==/') || true
